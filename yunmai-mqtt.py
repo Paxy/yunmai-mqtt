@@ -1,8 +1,10 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.4
 from bluepy.btle import Scanner, DefaultDelegate, Peripheral
 from YunmailLib import YunmaiLib
 from time import sleep
 import paho.mqtt.client as mqtt
+import codecs
+
 
 mac="0C:B2:B7:17:D1:F0"
 sex=1 #1=Male, 2=Female
@@ -25,7 +27,8 @@ class MyDelegate(DefaultDelegate):
         self.processData(data)
         
     def processData(self,data):
-        data=data.hex()
+        #data=data.hex()
+        data=codecs.encode(data,'hex')
         weight=int((data[26:28] + data[28:30]), 16) * 0.01
         resistance=int((data[30:32] + data[32:34]), 16)
         fat=int((data[34:36] + data[36:38]), 16) * 0.01
@@ -33,7 +36,7 @@ class MyDelegate(DefaultDelegate):
 
         if(resistance==0):
               client.publish('{}/yunmai/weight'.format(mqttPrefix), round(weight,1))
-              print('{"weight":',round(weight,1),', "fat":',round(fat),' , "muscle":',round(muscle),', "water":',round(water),', "boneMass":',round(boneMass),', "skeletalMuscle":',round(skeletalMuscle),', "leanBodyMass":',round(leanBodyMass),', "visceralFat":',round(visceralFat),' }')
+              print('{"weight":',round(weight,1),' }')
               return
     
         scale=YunmaiLib(sex==1,height,veryActive)
@@ -97,7 +100,8 @@ while True:
             #print ("Waiting...")
 
     except Exception as e:
-         print('{"error": "',e,'"}')
+        print('{"error": "',e,'"}')
+        raise e
 
     sleep(1)
 
